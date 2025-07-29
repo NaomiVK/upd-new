@@ -652,6 +652,46 @@ export class PagesService {
       };
     }
   }
+
+  async getPageHtml(url: string) {
+    try {
+      // Ensure URL has https:// protocol
+      const fullUrl = url.startsWith('http://') || url.startsWith('https://') 
+        ? url 
+        : `https://${url}`;
+      
+      // Fetch the page HTML with appropriate headers
+      const response = await fetch(fullUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-CA,en;q=0.9,fr-CA;q=0.8,fr;q=0.7',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
+        redirect: 'follow'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch page: ${response.status} ${response.statusText}`);
+      }
+      
+      const html = await response.text();
+      
+      // Basic HTML validation
+      if (!html.includes('<html') && !html.includes('<!DOCTYPE')) {
+        throw new Error('Invalid HTML response received');
+      }
+      
+      return {
+        html,
+        url: response.url // Return the final URL after redirects
+      };
+    } catch (error) {
+      console.error('Error fetching page HTML:', error);
+      throw new Error(`Failed to fetch page HTML: ${error.message}`);
+    }
+  }
 }
 
 function aggregateSearchTermMetrics(dailyPageMetrics: PageMetrics[]) {

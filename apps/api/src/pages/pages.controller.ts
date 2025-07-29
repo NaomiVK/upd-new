@@ -54,4 +54,10 @@ export class PagesController {
   async runCoreWebVitalsTest(@Query('url') url: string) {
     return this.pagesService.runCoreWebVitalsTest(url);
   }
+
+  @Get('html')
+  @Header('Content-Type', 'application/json')
+  async getPageHtml(@Query('url') url: string) {
+    return this.pagesService.getPageHtml(url);
+  }
 }

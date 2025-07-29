@@ -169,6 +169,33 @@
                           </div>
                         </upd-accordion>
                       </div>
+                      
+                      <!-- Visual Preview Section -->
+                      @if (categorized.failed.length > 0) {
+                        <div class="mb-4">
+                          <button 
+                            pButton 
+                            type="button" 
+                            [label]="showVisualPreview ? ('accessibility-hide-preview' | translate) : ('accessibility-show-preview' | translate)"
+                            [icon]="showVisualPreview ? 'pi pi-eye-slash' : 'pi pi-eye'"
+                            class="p-button-outlined p-button-sm"
+                            (click)="toggleVisualPreview()">
+                          </button>
+                          
+                          @if (showVisualPreview) {
+                            <div class="visual-preview-container mt-3">
+                              <h5>{{ 'accessibility-visual-preview' | translate }}</h5>
+                              
+                              <!-- Full Page Preview -->
+                              <div class="full-page-preview mt-3">
+                                <div #desktopPreviewContainer class="html-preview-container border rounded" style="height: 600px; overflow: auto;">
+                                  <!-- Shadow DOM content will be inserted here -->
+                                </div>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      }
                     }
                     
                     <!-- Passed Tests Section -->
@@ -361,6 +388,33 @@
                           </div>
                         </upd-accordion>
                       </div>
+                      
+                      <!-- Visual Preview Section -->
+                      @if (categorized.failed.length > 0) {
+                        <div class="mb-4">
+                          <button 
+                            pButton 
+                            type="button" 
+                            [label]="showVisualPreview ? ('accessibility-hide-preview' | translate) : ('accessibility-show-preview' | translate)"
+                            [icon]="showVisualPreview ? 'pi pi-eye-slash' : 'pi pi-eye'"
+                            class="p-button-outlined p-button-sm"
+                            (click)="toggleVisualPreview()">
+                          </button>
+                          
+                          @if (showVisualPreview) {
+                            <div class="visual-preview-container mt-3">
+                              <h5>{{ 'accessibility-visual-preview' | translate }}</h5>
+                              
+                              <!-- Full Page Preview -->
+                              <div class="full-page-preview mt-3">
+                                <div #desktopPreviewContainer class="html-preview-container border rounded" style="height: 600px; overflow: auto;">
+                                  <!-- Shadow DOM content will be inserted here -->
+                                </div>
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      }
                     }
                     
                     <!-- Passed Tests Section -->
