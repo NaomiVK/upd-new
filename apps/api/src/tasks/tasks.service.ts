@@ -3,27 +3,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import type { Cache } from 'cache-manager';
-import type {
-  CallDriverModel,
-  FeedbackModel,
-  PageDocument,
-  PageMetricsModel,
-  ProjectDocument,
-  TaskDocument,
-  UxTestDocument,
-} from '@dua-upd/db';
-import {
-  CallDriver,
-  DbService,
-  Feedback,
-  GcTasks,
-  Page,
-  PageMetrics,
-  Project,
-  Reports,
-  Task,
-  UxTest,
-} from '@dua-upd/db';
+import { DbService } from '@dua-upd/db';
 import type {
   ApiParams,
   IReports,
@@ -43,28 +23,12 @@ import { FeedbackService } from '@dua-upd/api/feedback';
 import { omit } from 'rambdax';
 import { compressString, decompressString } from '@dua-upd/node-utils';
 
+const DOCUMENTS_URL = () => process.env.DOCUMENTS_URL || '';
+
 @Injectable()
 export class TasksService {
   constructor(
     private db: DbService,
-    @InjectModel(Project.name, 'defaultConnection')
-    private projectModel: Model<ProjectDocument>,
-    @InjectModel(Task.name, 'defaultConnection')
-    private taskModel: Model<TaskDocument>,
-    @InjectModel(UxTest.name, 'defaultConnection')
-    private uxTestModel: Model<UxTestDocument>,
-    @InjectModel(PageMetrics.name, 'defaultConnection')
-    private pageMetricsModel: PageMetricsModel,
-    @InjectModel(Feedback.name, 'defaultConnection')
-    private feedbackModel: FeedbackModel,
-    @InjectModel(CallDriver.name, 'defaultConnection')
-    private calldriversModel: CallDriverModel,
-    @InjectModel(Page.name, 'defaultConnection')
-    private pageModel: Model<PageDocument>,
-    @InjectModel(Reports.name, 'defaultConnection')
-    private reportsModel: Model<Reports>,
-    @InjectModel(GcTasks.name, 'defaultConnection')
-    private gcTasksModel: Model<GcTasks>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private feedbackService: FeedbackService,
   ) {}
@@ -141,18 +105,32 @@ export class TasksService {
       );
     console.timeEnd('tasks');
 
-    const reports = (await this.reportsModel
+    const documentsUrl = DOCUMENTS_URL();
+
+    const reports = (await this.db.collections.reports
       .find(
         { type: 'tasks' },
         {
-          _id: 0,
           en_title: 1,
           fr_title: 1,
           en_attachment: 1,
           fr_attachment: 1,
         },
       )
-      .exec()) as IReports[];
+      .exec()
+      .then((reports) =>
+        reports.map((report) => ({
+          ...omit(['_id'], report),
+          en_attachment: report.en_attachment?.map((attachment) => ({
+            ...attachment,
+            storage_url: `${documentsUrl}${attachment.storage_url}`,
+          })),
+          fr_attachment: report.fr_attachment?.map((attachment) => ({
+            ...attachment,
+            storage_url: `${documentsUrl}${attachment.storage_url}`,
+          })),
+        })),
+      )) as IReports[];
 
     const results = {
       dateRange,
