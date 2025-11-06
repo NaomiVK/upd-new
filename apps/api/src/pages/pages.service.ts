@@ -229,6 +229,7 @@ export class PagesService {
       'visits_referrer_searchengine',
       'visits_referrer_social',
       'visits_referrer_typed_bookmarked',
+      'visits_referrer_convo_ai',
     ] as (keyof PageAggregatedData | MetricsConfig<PageAggregatedData>)[];
 
     const dateRangeData: PageAggregatedData = (
@@ -238,6 +239,16 @@ export class PagesService {
         { page: page._id },
       )
     )[0];
+
+    // Debug: Log referrer type data for Conversational AI
+    console.log('[Pages Service Debug] Page URL:', page.url);
+    console.log('[Pages Service Debug] Date Range Referrer Data:', {
+      visits_referrer_other: dateRangeData?.visits_referrer_other,
+      visits_referrer_searchengine: dateRangeData?.visits_referrer_searchengine,
+      visits_referrer_social: dateRangeData?.visits_referrer_social,
+      visits_referrer_typed_bookmarked: dateRangeData?.visits_referrer_typed_bookmarked,
+      visits_referrer_convo_ai: dateRangeData?.visits_referrer_convo_ai,
+    });
 
     const dateRangeDataByDay = await this.getPageDetailsDataByDay(
       page,
@@ -251,6 +262,14 @@ export class PagesService {
         { page: page._id },
       )
     )[0];
+
+    console.log('[Pages Service Debug] Comparison Date Range Referrer Data:', {
+      visits_referrer_other: comparisonDateRangeData?.visits_referrer_other,
+      visits_referrer_searchengine: comparisonDateRangeData?.visits_referrer_searchengine,
+      visits_referrer_social: comparisonDateRangeData?.visits_referrer_social,
+      visits_referrer_typed_bookmarked: comparisonDateRangeData?.visits_referrer_typed_bookmarked,
+      visits_referrer_convo_ai: comparisonDateRangeData?.visits_referrer_convo_ai,
+    });
 
     const comparisonDateRangeDataByDay = await this.getPageDetailsDataByDay(
       page,

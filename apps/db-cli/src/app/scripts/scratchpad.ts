@@ -299,3 +299,115 @@ export async function testHttp() {
 
   logJson(test)
 }
+
+export async function testConvoAIMetric(
+  _db: DbService,
+  _dbUpdateService: any
+) {
+  console.log('🔍 Testing Conversational AI Metric from Adobe Analytics...\n');
+
+  const { AdobeAnalyticsQueryBuilder, CALCULATED_METRICS, SEGMENTS } = await import('@dua-upd/node-utils');
+  const { toQueryFormat } = await import('@dua-upd/external-data');
+
+  console.log('📋 Metric ID:', CALCULATED_METRICS.REF_CONVO_AI);
+  console.log('   (cm300000938_68fbc9a7ca338753e868b7f2)\n');
+
+  // Get the module ref from 'this' context (it's injected by run-script.command)
+  const moduleRef = (this as any).moduleRef;
+
+  if (!moduleRef) {
+    console.log('❌ Could not get module reference');
+    return;
+  }
+
+  // Test query for last 7 days
+  const endDate = dayjs().subtract(1, 'day').format('YYYY-MM-DD');
+  const startDate = dayjs().subtract(8, 'day').format('YYYY-MM-DD');
+
+  // Format dates properly for Adobe Analytics API
+  const formattedStart = toQueryFormat(startDate);
+  const formattedEnd = toQueryFormat(endDate);
+
+  console.log(`📅 Testing date range: ${startDate} to ${endDate}\n`);
+
+  try {
+    // Create a simple test query with just the convo_ai metric
+    const queryBuilder = new AdobeAnalyticsQueryBuilder();
+    const testQuery = queryBuilder
+      .setDimension('variables/daterangeday')
+      .setMetrics({
+        visits: 'metrics/visits',
+        visits_referrer_convo_ai: CALCULATED_METRICS.REF_CONVO_AI,
+      })
+      .setGlobalFilters([
+        { type: 'segment', segmentId: SEGMENTS.cra },
+        { type: 'dateRange', dateRange: `${formattedStart}/${formattedEnd}` },
+      ])
+      .setSettings({
+        limit: 10,
+        nonesBehavior: 'return-nones',
+      })
+      .build();
+
+    console.log('🔄 Executing test query...\n');
+
+    // Execute the query through the client
+    const { AdobeAnalyticsClient } = await import('@dua-upd/external-data');
+    const client = moduleRef.get(AdobeAnalyticsClient.name, { strict: false });
+
+    if (!client) {
+      console.log('❌ Could not get Adobe Analytics client');
+      return;
+    }
+
+    const result = await client.executeQuery(testQuery);
+
+    console.log('✅ Query executed successfully!\n');
+    console.log('📊 Results:\n');
+
+    if (result && result.length > 0) {
+      console.log(`Found ${result.length} records\n`);
+
+      // Show first few results
+      const samplesToShow = Math.min(3, result.length);
+      for (let i = 0; i < samplesToShow; i++) {
+        const record = result[i];
+        console.log(`Record ${i + 1}:`);
+        console.log(`  Date: ${record.date}`);
+        console.log(`  Total Visits: ${record.visits || 0}`);
+        console.log(`  Convo AI Visits: ${record.visits_referrer_convo_ai || 0}`);
+        console.log('');
+      }
+
+      // Check if any have non-zero convo_ai values
+      const recordsWithConvoAI = result.filter(
+        (r: any) => r.visits_referrer_convo_ai && r.visits_referrer_convo_ai > 0
+      );
+
+      if (recordsWithConvoAI.length > 0) {
+        console.log(`✅ SUCCESS! Found ${recordsWithConvoAI.length} records with Conversational AI visits > 0`);
+        console.log('\nSample record with Convo AI traffic:');
+        logJson(recordsWithConvoAI[0]);
+      } else {
+        console.log('⚠️  Metric exists but all values are 0');
+        console.log('   This could mean:');
+        console.log('   - The metric was recently added and has no historical data');
+        console.log('   - There genuinely is no Conversational AI traffic in this date range');
+        console.log('   - The metric ID might be incorrect');
+      }
+    } else {
+      console.log('❌ No results returned from query');
+    }
+
+  } catch (error: any) {
+    console.log('\n❌ ERROR executing query:');
+    console.log(error.message);
+    if (error.message && (error.message.includes('Invalid Calculated Metric') || error.message.includes('not found'))) {
+      console.log('\n⚠️  The metric ID appears to be INVALID in Adobe Analytics');
+      console.log('   Metric ID: cm300000938_68fbc9a7ca338753e868b7f2');
+      console.log('   This metric may not exist or you may not have access to it');
+    }
+    console.log('\nFull error:');
+    console.log(error.stack);
+  }
+}

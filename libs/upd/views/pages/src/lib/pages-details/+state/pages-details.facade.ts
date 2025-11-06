@@ -528,6 +528,25 @@ export class PagesDetailsFacade {
     this.currentLang$,
   ]).pipe(
     map(([data, lang]) => {
+      // Debug: Log raw referrer data from store
+      console.log('[Facade Debug] Raw referrer data from store:', {
+        url: data?.url,
+        dateRangeData: {
+          visits_referrer_other: data?.dateRangeData?.visits_referrer_other,
+          visits_referrer_searchengine: data?.dateRangeData?.visits_referrer_searchengine,
+          visits_referrer_social: data?.dateRangeData?.visits_referrer_social,
+          visits_referrer_typed_bookmarked: data?.dateRangeData?.visits_referrer_typed_bookmarked,
+          visits_referrer_convo_ai: data?.dateRangeData?.visits_referrer_convo_ai,
+        },
+        comparisonDateRangeData: {
+          visits_referrer_other: data?.comparisonDateRangeData?.visits_referrer_other,
+          visits_referrer_searchengine: data?.comparisonDateRangeData?.visits_referrer_searchengine,
+          visits_referrer_social: data?.comparisonDateRangeData?.visits_referrer_social,
+          visits_referrer_typed_bookmarked: data?.comparisonDateRangeData?.visits_referrer_typed_bookmarked,
+          visits_referrer_convo_ai: data?.comparisonDateRangeData?.visits_referrer_convo_ai,
+        },
+      });
+
       const dataByReferrerType = Object.entries(
         this.referrerTypePropToKeyMap,
       ).map(([prop, refType]) => {
@@ -551,6 +570,8 @@ export class PagesDetailsFacade {
           change,
         };
       });
+
+      console.log('[Facade Debug] Transformed referrer data:', dataByReferrerType);
 
       const isZero = dataByReferrerType.every((v) => v.value === 0);
 

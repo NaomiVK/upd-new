@@ -129,7 +129,57 @@ export async function getAggregatedPageMetrics<T>(
   }
   const pagesFilterQuery = pagesFilter || {};
 
-  return await this.aggregate<T>()
+  // Debug: Log aggregation pipeline configuration
+  console.log('[DB Debug] getAggregatedPageMetrics called with:');
+  console.log('  - Date Range:', dateRange);
+  console.log('  - Selected Metrics:', selectedMetrics);
+  console.log('  - Metrics Projections:', metricsProjections);
+  console.log('  - Metrics Group Aggregations:', metricsGroupAggregations);
+
+  // Check if visits_referrer_convo_ai is in the projections
+  if ('visits_referrer_convo_ai' in metricsProjections) {
+    console.log('[DB Debug] ✅ visits_referrer_convo_ai IS in projections');
+  } else {
+    console.log('[DB Debug] ❌ visits_referrer_convo_ai NOT in projections');
+  }
+
+  // Debug: Check if any raw data exists in the collection with non-zero visits_referrer_convo_ai
+  const sampleDoc = await this.findOne({
+    date: { $gte: startDate, $lte: endDate },
+    visits_referrer_convo_ai: { $gt: 0 },
+    ...pagesFilterQuery,
+  }).exec();
+
+  if (sampleDoc) {
+    console.log('[DB Debug] ✅ Found sample document with visits_referrer_convo_ai > 0:', {
+      date: sampleDoc.date,
+      visits_referrer_convo_ai: sampleDoc.visits_referrer_convo_ai,
+      visits_referrer_other: sampleDoc.visits_referrer_other,
+    });
+  } else {
+    console.log('[DB Debug] ⚠️ No documents found with visits_referrer_convo_ai > 0 in date range');
+
+    // Check if the field exists at all (even with zero values)
+    const anyDoc = await this.findOne({
+      date: { $gte: startDate, $lte: endDate },
+      ...pagesFilterQuery,
+    }).exec();
+
+    if (anyDoc) {
+      console.log('[DB Debug] Sample document field check:', {
+        has_convo_ai_field: 'visits_referrer_convo_ai' in anyDoc,
+        convo_ai_value: anyDoc.visits_referrer_convo_ai,
+        other_referrer_values: {
+          other: anyDoc.visits_referrer_other,
+          searchengine: anyDoc.visits_referrer_searchengine,
+          social: anyDoc.visits_referrer_social,
+          typed_bookmarked: anyDoc.visits_referrer_typed_bookmarked,
+        }
+      });
+    }
+  }
+
+  const result = await this.aggregate<T>()
     .match({
       date: {
         $gte: startDate,
@@ -164,6 +214,20 @@ export async function getAggregatedPageMetrics<T>(
     })
     .sort(metricsSort)
     .exec();
+
+  // Debug: Log first result to see what was actually returned
+  if (result && result.length > 0) {
+    console.log('[DB Debug] First aggregation result:', {
+      url: result[0]['url' as keyof T],
+      visits_referrer_convo_ai: result[0]['visits_referrer_convo_ai' as keyof T],
+      visits_referrer_other: result[0]['visits_referrer_other' as keyof T],
+      visits_referrer_searchengine: result[0]['visits_referrer_searchengine' as keyof T],
+      visits_referrer_social: result[0]['visits_referrer_social' as keyof T],
+      visits_referrer_typed_bookmarked: result[0]['visits_referrer_typed_bookmarked' as keyof T],
+    });
+  }
+
+  return result;
 }
 
 // export async function toTimeSeries(
