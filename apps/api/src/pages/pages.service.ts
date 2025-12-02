@@ -604,14 +604,6 @@ export class PagesService {
   async runAccessibilityTest(url: string) {
     try {
       // Ensure URL has https:// protocol for PageSpeed Insights API
-<<<<<<< HEAD
-      const fullUrl = url.startsWith('http://') || url.startsWith('https://') 
-        ? url 
-        : `https://${url}`;
-      
-      // Run desktop tests for both locales (English and French)
-      const results = await this.pageSpeedInsightsService.runAccessibilityTestForBothLocales(fullUrl);
-=======
       const fullUrl =
         url.startsWith('http://') || url.startsWith('https://')
           ? url
@@ -622,7 +614,6 @@ export class PagesService {
         await this.pageSpeedInsightsService.runAccessibilityTestForBothLocales(
           fullUrl,
         );
->>>>>>> 6dbc80a076126e64fc5d06e8b753c973ed941c0f
 
       return {
         en: {
@@ -655,19 +646,6 @@ export class PagesService {
         errorKey = 'accessibility-error-bad-gateway';
       }
       // Check error codes for network/socket issues
-<<<<<<< HEAD
-      else if (error.code === 'ECONNRESET' || error.message?.includes('socket hang up') || error.message?.includes('ECONNRESET')) {
-        errorKey = 'accessibility-error-connection-reset';
-      } else if (error.code === 'ETIMEDOUT' || error.message?.includes('timeout') || error.message?.includes('ETIMEDOUT')) {
-        errorKey = 'accessibility-error-timeout';
-      } else if (error.code === 'ENOTFOUND' || error.message?.includes('network') || error.message?.includes('ENOTFOUND')) {
-        errorKey = 'accessibility-error-network';
-      }
-      // Check error message strings as fallback
-      else if (error.message?.includes('429') || error.message?.includes('rate limit')) {
-        errorKey = 'accessibility-error-rate-limit';
-      } else if (error.message?.includes('Invalid URL') || error.message?.includes('invalid url')) {
-=======
       else if (
         error.code === 'ECONNRESET' ||
         error.message?.includes('socket hang up') ||
@@ -697,7 +675,6 @@ export class PagesService {
         error.message?.includes('Invalid URL') ||
         error.message?.includes('invalid url')
       ) {
->>>>>>> 6dbc80a076126e64fc5d06e8b753c973ed941c0f
         errorKey = 'accessibility-error-invalid-url';
       }
 

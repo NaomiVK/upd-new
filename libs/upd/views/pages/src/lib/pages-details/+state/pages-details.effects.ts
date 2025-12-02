@@ -19,20 +19,14 @@ import {
   loadAccessibilityInit,
   loadAccessibilitySuccess,
   loadAccessibilityError,
-<<<<<<< HEAD
-=======
   loadPagesDetailsError,
->>>>>>> 6dbc80a076126e64fc5d06e8b753c973ed941c0f
 } from './pages-details.actions';
 import { selectPagesDetailsData, selectAccessibilityData } from './pages-details.selectors';
 import * as PagesDetailsSelectors from './pages-details.selectors';
 import { UrlHash } from '@dua-upd/types-common';
 import type { LocalizedAccessibilityTestResponse } from '@dua-upd/types-common';
-<<<<<<< HEAD
-=======
 
 const pagesRouteRegex = /\/pages\//;
->>>>>>> 6dbc80a076126e64fc5d06e8b753c973ed941c0f
 
 @Injectable()
 export class PagesDetailsEffects {

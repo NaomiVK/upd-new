@@ -9,7 +9,3 @@ export * from './search-assessment/search-assessment.service';
 export * from './lib/utils';
 export * from './lib/pagespeed-insights/pagespeed-insights.service';
 export * from './lib/pagespeed-insights/pagespeed-insights.client';
-<<<<<<< HEAD
-export * from './lib/openrouter';
-=======
->>>>>>> 6dbc80a076126e64fc5d06e8b753c973ed941c0f

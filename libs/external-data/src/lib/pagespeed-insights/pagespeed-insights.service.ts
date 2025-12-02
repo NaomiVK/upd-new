@@ -2,30 +2,7 @@ import { Injectable, Inject, ConsoleLogger } from '@nestjs/common';
 import { wait } from '@dua-upd/utils-common';
 import { Retry } from '@dua-upd/utils-common';
 import { PageSpeedInsightsClient } from './pagespeed-insights.client';
-<<<<<<< HEAD
-
-export interface AccessibilityAudit {
-  id: string;
-  title: string;
-  description: string;
-  score: number | null;
-  displayMode: string;
-  category: 'failed' | 'manual_check' | 'passed' | 'not_applicable';
-  snippet?: string;
-  helpUrl?: string;
-}
-
-export interface AccessibilityTestResult {
-  url: string;
-  strategy: 'mobile' | 'desktop';
-  score: number;
-  scoreDisplay: string;
-  audits: AccessibilityAudit[];
-  testedAt: Date;
-}
-=======
 import type { AccessibilityAudit, AccessibilityTestResult } from '@dua-upd/types-common';
->>>>>>> 6dbc80a076126e64fc5d06e8b753c973ed941c0f
 
 @Injectable()
 export class PageSpeedInsightsService {
@@ -57,7 +34,7 @@ export class PageSpeedInsightsService {
 
       const { lighthouseResult } = response;
       const accessibilityCategory = lighthouseResult.categories?.accessibility;
-      
+
       if (!accessibilityCategory) {
         throw new Error('No accessibility data in response');
       }
@@ -67,14 +44,14 @@ export class PageSpeedInsightsService {
 
       // Process audits
       const audits: AccessibilityAudit[] = [];
-      
+
       for (const auditRef of accessibilityCategory.auditRefs) {
         const audit = lighthouseResult.audits[auditRef.id];
         if (!audit) continue;
 
         // Categorize the audit
         const category = this.categorizeAudit(audit.score, audit.scoreDisplayMode);
-        
+
         // Extract snippet if available
         let snippet: string | undefined;
         const items = audit.details?.items;
