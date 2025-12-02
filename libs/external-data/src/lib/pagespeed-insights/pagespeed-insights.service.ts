@@ -2,6 +2,7 @@ import { Injectable, Inject, ConsoleLogger } from '@nestjs/common';
 import { wait } from '@dua-upd/utils-common';
 import { Retry } from '@dua-upd/utils-common';
 import { PageSpeedInsightsClient } from './pagespeed-insights.client';
+<<<<<<< HEAD
 
 export interface AccessibilityAudit {
   id: string;
@@ -22,6 +23,9 @@ export interface AccessibilityTestResult {
   audits: AccessibilityAudit[];
   testedAt: Date;
 }
+=======
+import type { AccessibilityAudit, AccessibilityTestResult } from '@dua-upd/types-common';
+>>>>>>> 6dbc80a076126e64fc5d06e8b753c973ed941c0f
 
 @Injectable()
 export class PageSpeedInsightsService {

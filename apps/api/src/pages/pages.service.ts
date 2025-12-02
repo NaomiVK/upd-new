@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { InjectModel } from '@nestjs/mongoose';
-import { Cache } from 'cache-manager';
+import type { Cache } from 'cache-manager';
 import { Model, Types } from 'mongoose';
 import type {
   FeedbackModel,
@@ -125,18 +125,17 @@ export class PagesService {
           pageStatus: 1,
           visits: 1,
         },
-        {
-          sort: { visits: -1 },
-        },
       )
       .then((results) =>
-        results.map((page) => ({
-          _id: page.pageId,
-          title: page.title,
-          url: page.url,
-          pageStatus: page.pageStatus,
-          visits: page.visits,
-        })),
+        results
+          .map((page) => ({
+            _id: page.pageId,
+            title: page.title,
+            url: page.url,
+            pageStatus: page.pageStatus,
+            visits: page.visits,
+          }))
+          .sort((a, b) => (b.visits || 0) - (a.visits || 0)),
       );
 
     await this.cacheManager.set(
@@ -276,45 +275,20 @@ export class PagesService {
       params.comparisonDateRange,
     );
 
-    const aggregatedSearchTermMetrics =
-      aggregateSearchTermMetrics(dateRangeDataByDay);
-    const aggregatedComparisonSearchTermMetrics = aggregateSearchTermMetrics(
-      comparisonDateRangeDataByDay,
-    );
-
-    const searchTermsWithPercentChange = getSearchTermsWithPercentChange(
-      aggregatedSearchTermMetrics,
-      aggregatedComparisonSearchTermMetrics,
-    );
-
-    const topIncreasedSearchTerms = getTop5IncreaseSearchTerms(
-      searchTermsWithPercentChange,
-    );
-
-    const top25GSCSearchTerms = getTop25SearchTerms(
-      searchTermsWithPercentChange,
-    );
-
-    const topDecreasedSearchTerms = getTop5DecreaseSearchTerms(
-      searchTermsWithPercentChange,
-    );
-
     const readability = await this.readabilityModel
       .find({ page: new Types.ObjectId(params.id) })
       .sort({ date: -1 })
       .lean()
       .exec();
 
-    const mostRelevantCommentsAndWords =
-      await this.feedbackService.getMostRelevantCommentsAndWords({
-        dateRange: parseDateRangeString(params.dateRange),
-        type: 'page',
-        id: params.id,
-      });
+    const commentsAndWords = await this.feedbackService.getCommentsAndWords({
+      dateRange: parseDateRangeString(params.dateRange),
+      type: 'page',
+      id: params.id,
+    });
 
     const numComments =
-      mostRelevantCommentsAndWords.en.comments.length +
-      mostRelevantCommentsAndWords.fr.comments.length;
+      commentsAndWords.en.comments.length + commentsAndWords.fr.comments.length;
 
     const { start: prevDateRangeStart, end: prevDateRangeEnd } =
       parseDateRangeString(params.comparisonDateRange);
@@ -339,6 +313,23 @@ export class PagesService {
             .exec()
         )?._id.toString()
       : null;
+
+    const dateRange = parseDateRangeString(params.dateRange);
+    const comparisonDateRange = parseDateRangeString(
+      params.comparisonDateRange,
+    );
+
+    const {
+      aaSearchTerms,
+      top25GSCSearchTerms,
+      topIncreasedSearchTerms,
+      topDecreasedSearchTerms,
+      activityMap,
+    } = await this.db.views.pages.getPageDetailsData(
+      page._id,
+      dateRange,
+      comparisonDateRange,
+    );
 
     const results = {
       _id: page._id.toString(),
@@ -376,10 +367,10 @@ export class PagesService {
         date: date.toISOString(),
         sum,
       })),
-      searchTerms: await this.getTopSearchTerms(params),
-      activityMap: await this.getActivityMapData(params),
+      searchTerms: aaSearchTerms,
+      activityMap,
       readability,
-      mostRelevantCommentsAndWords,
+      commentsAndWords,
       numComments,
       numCommentsPercentChange,
       hashes: [],
@@ -418,44 +409,35 @@ export class PagesService {
   async getPageDetailsDataByDay(page: Page, dateRange: string) {
     const [startDate, endDate] = dateRange.split('/').map((d) => new Date(d));
 
-    return (
-      await this.pageMetricsModel
-        .aggregate<PageMetrics>([
-          {
-            $match: {
-              page: page._id,
-              date: { $gte: startDate, $lte: endDate },
+    return await this.pageMetricsModel
+      .aggregate<PageMetrics>([
+        {
+          $match: {
+            page: page._id,
+            date: { $gte: startDate, $lte: endDate },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            visits: 1,
+            date: 1,
+          },
+        },
+        {
+          $group: {
+            _id: '$date',
+            date: {
+              $first: '$date',
+            },
+            visits: {
+              $sum: '$visits',
             },
           },
-          {
-            $project: {
-              _id: 0,
-              visits: 1,
-              date: 1,
-              gsc_searchterms: 1,
-            },
-          },
-          {
-            $group: {
-              _id: '$date',
-              date: {
-                $first: '$date',
-              },
-              visits: {
-                $sum: '$visits',
-              },
-              gsc_searchterms: {
-                $push: '$gsc_searchterms',
-              },
-            },
-          },
-        ])
-        .sort('date')
-        .exec()
-    ).map((result) => ({
-      ...result,
-      gsc_searchterms: result.gsc_searchterms.flat(),
-    }));
+        },
+      ])
+      .sort('date')
+      .exec();
   }
 
   async getActivityMapData({ dateRange, comparisonDateRange, id }: ApiParams) {
@@ -622,12 +604,25 @@ export class PagesService {
   async runAccessibilityTest(url: string) {
     try {
       // Ensure URL has https:// protocol for PageSpeed Insights API
+<<<<<<< HEAD
       const fullUrl = url.startsWith('http://') || url.startsWith('https://') 
         ? url 
         : `https://${url}`;
       
       // Run desktop tests for both locales (English and French)
       const results = await this.pageSpeedInsightsService.runAccessibilityTestForBothLocales(fullUrl);
+=======
+      const fullUrl =
+        url.startsWith('http://') || url.startsWith('https://')
+          ? url
+          : `https://${url}`;
+
+      // Run desktop tests for both locales (English and French)
+      const results =
+        await this.pageSpeedInsightsService.runAccessibilityTestForBothLocales(
+          fullUrl,
+        );
+>>>>>>> 6dbc80a076126e64fc5d06e8b753c973ed941c0f
 
       return {
         en: {
@@ -660,6 +655,7 @@ export class PagesService {
         errorKey = 'accessibility-error-bad-gateway';
       }
       // Check error codes for network/socket issues
+<<<<<<< HEAD
       else if (error.code === 'ECONNRESET' || error.message?.includes('socket hang up') || error.message?.includes('ECONNRESET')) {
         errorKey = 'accessibility-error-connection-reset';
       } else if (error.code === 'ETIMEDOUT' || error.message?.includes('timeout') || error.message?.includes('ETIMEDOUT')) {
@@ -671,6 +667,37 @@ export class PagesService {
       else if (error.message?.includes('429') || error.message?.includes('rate limit')) {
         errorKey = 'accessibility-error-rate-limit';
       } else if (error.message?.includes('Invalid URL') || error.message?.includes('invalid url')) {
+=======
+      else if (
+        error.code === 'ECONNRESET' ||
+        error.message?.includes('socket hang up') ||
+        error.message?.includes('ECONNRESET')
+      ) {
+        errorKey = 'accessibility-error-connection-reset';
+      } else if (
+        error.code === 'ETIMEDOUT' ||
+        error.message?.includes('timeout') ||
+        error.message?.includes('ETIMEDOUT')
+      ) {
+        errorKey = 'accessibility-error-timeout';
+      } else if (
+        error.code === 'ENOTFOUND' ||
+        error.message?.includes('network') ||
+        error.message?.includes('ENOTFOUND')
+      ) {
+        errorKey = 'accessibility-error-network';
+      }
+      // Check error message strings as fallback
+      else if (
+        error.message?.includes('429') ||
+        error.message?.includes('rate limit')
+      ) {
+        errorKey = 'accessibility-error-rate-limit';
+      } else if (
+        error.message?.includes('Invalid URL') ||
+        error.message?.includes('invalid url')
+      ) {
+>>>>>>> 6dbc80a076126e64fc5d06e8b753c973ed941c0f
         errorKey = 'accessibility-error-invalid-url';
       }
 

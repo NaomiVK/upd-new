@@ -19,7 +19,7 @@ import type {
   IFeedback,
   UrlHash,
 } from './schema.types';
-import type { MostRelevantCommentsAndWordsByLang } from './feedback.types';
+import type { CommentsAndWordsByLang } from './feedback.types';
 
 export type ApiParams =
   | ({
@@ -128,10 +128,9 @@ export interface PageDetailsData extends EntityDetailsData<PageAggregatedData> {
   searchTerms: InternalSearchTerm[];
   readability: IReadability[];
   activityMap: ActivityMap[];
-  mostRelevantCommentsAndWords: MostRelevantCommentsAndWordsByLang;
+  commentsAndWords: CommentsAndWordsByLang;
   numComments: number;
   numCommentsPercentChange: number | null;
-
   hashes: UrlHash[];
   alternatePageId: string;
 }
@@ -269,17 +268,26 @@ export interface OverviewData
     uniqueTasks: number;
     successRates: SuccessRates;
   };
+  wosImprovedTasksKpi?: {
+    uniqueTasks: number;
+    successRates: SuccessRates;
+  };
   improvedKpiTopSuccessRate?: {
     uniqueTopTasks: number;
     allTopTasks: number;
     topSuccessRates: SuccessRates;
+    totalTopTasksCount: number;
   };
   topTasksTable: {
     _id: string;
     tmf_rank: number;
     title: string;
+    visits: number | null;
+    calls: number | null;
+    calls_per_100_visits: number | null;
     calls_per_100_visits_percent_change: number | null;
     calls_per_100_visits_difference: number | null;
+    dyf_no: number | null;
     dyf_no_per_1000_visits_percent_change: number | null;
     dyf_no_per_1000_visits_difference: number | null;
     latest_ux_success: number | null;
@@ -290,7 +298,7 @@ export interface OverviewData
 }
 
 export type OverviewFeedback = {
-  mostRelevantCommentsAndWords: MostRelevantCommentsAndWordsByLang;
+  commentsAndWords: CommentsAndWordsByLang;
   numComments: number;
   numCommentsPercentChange: number | null;
   commentsByPage: {
@@ -306,7 +314,7 @@ export type OverviewFeedback = {
 };
 
 export type PartialOverviewFeedback = OverviewFeedback & {
-  mostRelevantCommentsAndWords: { parts: number };
+  commentsAndWords: { parts: number };
 };
 
 export type InternalSearchTerm = {
@@ -351,13 +359,18 @@ export interface TasksHomeAggregatedData {
   dyf_no: number;
   latest_ux_success: number;
   survey: number;
+  survey_percent_change: number | null;
+  survey_difference: number | null;
   survey_completed: number;
+  survey_completed_percent_change: number | null;
+  survey_completed_difference: number | null;
   calls_per_100_visits: number;
   dyf_no_per_1000_visits: number;
-  calls_per_100_visits_difference: number;
-  dyf_no_per_1000_visits_difference: number;
+  calls_per_100_visits_difference: number | null;
+  dyf_no_per_1000_visits_difference: number | null;
   calls_percent_change: number | null;
   dyf_no_percent_change: number | null;
+  dyf_no_difference: number | null;
   latest_success_rate_difference: number | null;
   latest_success_rate_percent_change: number | null;
 }
@@ -432,7 +445,7 @@ export interface TaskDetailsData extends EntityDetailsData<TaskDetailsMetrics> {
     callsDifference?: number | null;
   })[];
   searchTerms: InternalSearchTerm[];
-  mostRelevantCommentsAndWords: MostRelevantCommentsAndWordsByLang;
+  commentsAndWords: CommentsAndWordsByLang;
   visitsByPage?: {
     _id: string;
     visits: number;
@@ -592,7 +605,7 @@ export interface ProjectsDetailsData
     percentChange: number | null;
   }[];
   feedbackByDay: { date: string; sum: number }[];
-  mostRelevantCommentsAndWords: MostRelevantCommentsAndWordsByLang;
+  commentsAndWords: CommentsAndWordsByLang;
   numComments: number;
   numCommentsPercentChange: number | null;
 }
@@ -665,7 +678,10 @@ export type PageFlowData = {
   exits?: number;
 };
 
-export type CustomReportsComment = Pick<IFeedback, 'comment' | 'date' | 'url'> & {
+export type CustomReportsComment = Pick<
+  IFeedback,
+  'comment' | 'date' | 'url'
+> & {
   taskTitles: string[];
   projectTitles: string[];
 };
@@ -675,4 +691,4 @@ export type CustomReportsFeedback = {
   selectedPages: { _id: string; title: string }[];
   selectedTasks: { _id: string; title: string; pages: string[] }[];
   selectedProjects: { _id: string; title: string; pages: string[] }[];
-}
+};
